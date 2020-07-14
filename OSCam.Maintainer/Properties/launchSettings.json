@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "OSCam.Maintainer": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "true"
+      },
+      "remoteDebugEnabled": false
+    }
+  }
+}
