@@ -19,7 +19,7 @@
         /// <value>
         /// Number of backups to keep of oscam.server
         /// </value>
-        public int NumberOfBackupsToKeep { get; set; } = 5;
+        public int NumberOfBackupsToKeep { get; set; }
 
         /// <summary>
         /// Gets or sets endpoint to be scrapped

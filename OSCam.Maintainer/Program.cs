@@ -19,6 +19,8 @@ namespace OSCam.Maintainer
 {
     partial class Program
     {
+        static MaintainerOptions maintainerOptions;
+        
         static LoggerProviderCollection Providers = new LoggerProviderCollection();
 
         static IServiceProvider serviceProvider;
@@ -45,10 +47,11 @@ namespace OSCam.Maintainer
 
         private static async Task MainAsync()
         {
+        
+            maintainerOptions = serviceProvider.GetRequiredService<MaintainerOptions>();
+
             try
             {
-                var maintainerOptions = serviceProvider.GetRequiredService<MaintainerOptions>();
-                
                 var task_A = GetListofNewCLinesFromWeb(maintainerOptions.URLToScrap);
                 var task_B = GetListWithCurrentServerStatusFromOsCam(maintainerOptions.OsCamStatusPageURL);
                 var task_C = GetListWithCurrentReadersOnOscamServerFile(maintainerOptions.OscamServerPath);
@@ -80,7 +83,7 @@ namespace OSCam.Maintainer
 
             foreach (var reader in currentListOfCCCamReadersFromFile)
             {
-                if (reader.description.IndexOf("6;") >= 0)
+                if (reader.description.IndexOf(maintainerOptions.NumberOfBackupsToKeep + ";") >= 0)
                 {
                     readersToRemove.Add(reader);
                     Log.Debug(reader.label + " is stale with: " + reader.description + " and is flagged to be deleted");
@@ -111,9 +114,9 @@ namespace OSCam.Maintainer
                         if (linha.StartsWith('#') || linha.StartsWith("/r/n") || string.IsNullOrEmpty(linha))
                             continue;
 
-                        var asdf = linha.Split("=");
+                        var arrayCCCAMLines = linha.Split("=");
 
-                        switch (asdf[0].Trim().ToLower())
+                        switch (arrayCCCAMLines[0].Trim().ToLower())
                         {
                             case "[reader]":
                                 {
@@ -127,59 +130,59 @@ namespace OSCam.Maintainer
                                     continue;
                                 }
                             case "label":
-                                reader.label = string.IsNullOrEmpty(asdf[1]) ? reader.label : asdf[1].Trim();
+                                reader.label = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.label : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "description":
-                                reader.description = string.IsNullOrEmpty(asdf[1]) ? reader.description : asdf[1].Trim();
+                                reader.description = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.description : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "enable":
-                                reader.enable = string.IsNullOrEmpty(asdf[1]) ? reader.enable : asdf[1].Trim();
+                                reader.enable = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.enable : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "protocol":
-                                reader.protocol = string.IsNullOrEmpty(asdf[1]) ? reader.protocol : asdf[1].Trim();
+                                reader.protocol = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.protocol : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "device":
                                 {
-                                    if (!string.IsNullOrEmpty(asdf[1]))
+                                    if (!string.IsNullOrEmpty(arrayCCCAMLines[1]))
                                     {
-                                        var device = asdf[1].Split(',');
+                                        var device = arrayCCCAMLines[1].Split(',');
                                         reader.device = string.IsNullOrEmpty(device[0]) ? reader.device : device[0].Trim();
                                         reader.port = string.IsNullOrEmpty(device[1]) ? reader.port : device[1].Trim();
                                     }
                                     continue;
                                 }
                             case "key":
-                                reader.key = string.IsNullOrEmpty(asdf[1]) ? reader.key : asdf[1].Trim();
+                                reader.key = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.key : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "user":
-                                reader.user = string.IsNullOrEmpty(asdf[1]) ? reader.user : asdf[1].Trim();
+                                reader.user = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.user : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "password":
-                                reader.password = string.IsNullOrEmpty(asdf[1]) ? reader.password : asdf[1].Trim();
+                                reader.password = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.password : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "inactivitytimeout":
-                                reader.inactivitytimeout = string.IsNullOrEmpty(asdf[1]) ? reader.inactivitytimeout : asdf[1].Trim();
+                                reader.inactivitytimeout = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.inactivitytimeout : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "group":
-                                reader.group = string.IsNullOrEmpty(asdf[1]) ? reader.group : asdf[1].Trim();
+                                reader.group = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.group : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "cccversion":
-                                reader.cccversion = string.IsNullOrEmpty(asdf[1]) ? reader.cccversion : asdf[1].Trim();
+                                reader.cccversion = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.cccversion : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "ccckeepalive":
-                                reader.ccckeepalive = string.IsNullOrEmpty(asdf[1]) ? reader.ccckeepalive : asdf[1].Trim();
+                                reader.ccckeepalive = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.ccckeepalive : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "reconnecttimeout":
-                                reader.reconnecttimeout = string.IsNullOrEmpty(asdf[1]) ? reader.reconnecttimeout : asdf[1].Trim();
+                                reader.reconnecttimeout = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.reconnecttimeout : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "lb_weight":
-                                reader.lb_weight = string.IsNullOrEmpty(asdf[1]) ? reader.lb_weight : asdf[1].Trim();
+                                reader.lb_weight = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.lb_weight : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "cccmaxhops":
-                                reader.cccmaxhops = string.IsNullOrEmpty(asdf[1]) ? reader.cccmaxhops : asdf[1].Trim();
+                                reader.cccmaxhops = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.cccmaxhops : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "cccwantemu":
-                                reader.cccwantemu = string.IsNullOrEmpty(asdf[1]) ? reader.cccwantemu : asdf[1].Trim();
+                                reader.cccwantemu = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.cccwantemu : arrayCCCAMLines[1].Trim();
                                 continue;
                             default:
                                 Console.WriteLine("Skiped " + linha);
@@ -202,15 +205,28 @@ namespace OSCam.Maintainer
         {
             foreach (var osCAMReader in currentListOfCCCamReadersFromFile)
             {
-                var readerStatus = currentServerStatusList.Where(osCamSL => osCamSL.ReaderUser == osCAMReader.device &
-                                                                    osCamSL.Port == osCAMReader.port &
-                                                                    osCamSL.OsCamReaderDescription.Username == osCAMReader.user)
+                var readerStatus = currentServerStatusList.Where(osCamSL => osCamSL.ReaderUser == osCAMReader.device 
+                                                                           & osCamSL.Port == osCAMReader.port
+                                                                           //& osCamSL.OsCamReaderDescription.Username == osCAMReader.user
+                                                                            )
                                                           .Select(sl => sl.Status).FirstOrDefault();
 
-                if (readerStatus != null)
+                if (readerStatus?.ToLowerInvariant() == "off" || readerStatus?.ToLowerInvariant() == "unknown" || readerStatus?.ToLowerInvariant() == "error")
                 { 
                     osCAMReader.UpdateNewFoundStateOnDescription(readerStatus);
                     Log.Debug(osCAMReader.label + " reader was found with the stale state: " + readerStatus + " . Let's update its description.");
+                }
+
+                var readerLBValueReader = currentServerStatusList.Where(osCamSL => osCamSL.ReaderUser == osCAMReader.device 
+                                                                           & osCamSL.Port == osCAMReader.port
+                                                                           //& osCamSL.OsCamReaderDescription.Username == osCAMReader.user
+                                                                            )
+                                                          .Select(sl => sl.LBValueReader).FirstOrDefault();
+
+                if (readerLBValueReader == "no data")
+                {
+                    osCAMReader.UpdateNewFoundStateOnDescription("LBValueReader");
+                    Log.Debug(osCAMReader.label + " reader was found with the stale state: LBValueReader has not data. Let's update its description.");
                 }
             }
 
@@ -275,6 +291,7 @@ namespace OSCam.Maintainer
                                Description = ((AngleSharp.Html.Dom.IHtmlTableDataCellElement)sl.QuerySelectorAll("td.statuscol4").FirstOrDefault())?.Title?.Substring(((AngleSharp.Html.Dom.IHtmlTableDataCellElement)sl.QuerySelectorAll("td.statuscol4").FirstOrDefault()).Title.LastIndexOf('\r') + 2)?.TrimEnd(')'),
                                ReaderUser = sl.QuerySelectorAll("td.statuscol4").Select(tg => tg.TextContent).FirstOrDefault()?.Trim(),
                                Port = sl.QuerySelectorAll("td.statuscol8").Select(tg => tg.TextContent).FirstOrDefault()?.Trim(),
+                               LBValueReader = sl.QuerySelectorAll("td.statuscol14").Select(tg => tg.TextContent).FirstOrDefault()?.Trim(),
                                Status = sl.QuerySelectorAll("td.statuscol16").Select(tg => tg.TextContent).FirstOrDefault()?.Trim()
                            }));
 
@@ -325,7 +342,7 @@ namespace OSCam.Maintainer
                                            label = cl.hostname,
                                            cccversion = cl.cccversion,
                                            cccwantemu = cl.wantemus,
-                                           description = "0;0;0;"+ cl.username
+                                           description = "0;0;0;0;" + cl.username
                                        }));
 
             Log.Information("Retrieved " + readers.Count + " C lines from " + url);

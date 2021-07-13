@@ -7,7 +7,7 @@ namespace OSCam.Maintainer.Models
     {
         public const string reader = @"[reader]";
         public string label { get; set; } = ""; // same as label
-        public string description { get; set; } // error;off;unknown;username
+        public string description { get; set; } // error;off;unknown;no data;username
         public string enable { get; set; } = "1";
         public string protocol { get; set; } = "cccam"; //cccam ou newcam
         public string key { get; set; } = "";
@@ -56,7 +56,7 @@ namespace OSCam.Maintainer.Models
         public void UpdateNewFoundStateOnDescription(string newFoundState)
         {
             var readerDescriptionModel = new OsCamReaderDescription(description);
-            readerDescriptionModel.UpdateWithNewFoundDescription(newFoundState);
+            readerDescriptionModel.UpdateDescriptionWithNewData(newFoundState);
             description = readerDescriptionModel.ToString();
         }
     }

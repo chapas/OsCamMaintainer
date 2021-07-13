@@ -5,25 +5,27 @@ namespace OSCam.Maintainer
 {
     public class OsCamReaderDescription
     {
-        int Error { get; set; } = 0;
-        int Off { get; set; } = 0;
-        int Unknown { get; set; } = 0;
+        int Error { get; set; }
+        int Off { get; set; }
+        int Unknown { get; set; }
+        int LBValueReader { get; set; }
         public string Username { get; set; } = "";
 
         public OsCamReaderDescription(string description)
         {
-            var asdf = description.Split(';', StringSplitOptions.None);
+            var statusArray = description.Split(';', StringSplitOptions.None);
 
-            if (asdf.Length != 4) 
-                return; //dont's care whats on description field, gets 0;0;0
+            if (statusArray.Length != 5)
+                statusArray = new[] {"0", "0", "0", "0", "0"}; //don't care whats on description field, gets 0;0;0;0
 
-                Error = int.Parse(asdf[0]);
-                Off = int.Parse(asdf[1]);
-                Unknown = int.Parse(asdf[2]);
-                Username =  string.IsNullOrEmpty(asdf[3]) ? "" : asdf[3];
+                Error = int.Parse(statusArray[0]);
+                Off = int.Parse(statusArray[1]);
+                Unknown = int.Parse(statusArray[2]);
+                LBValueReader = int.Parse(statusArray[3]);
+                Username =  string.IsNullOrEmpty(statusArray[4]) ? "" : statusArray[4];
         }
 
-        public void UpdateWithNewFoundDescription(string newFoundState)
+        public void UpdateDescriptionWithNewData(string newFoundState)
         {
             switch (newFoundState.ToLower())
             {
@@ -36,11 +38,15 @@ namespace OSCam.Maintainer
                 case "error":
                     this.Error += 1;
                     break;
+                case "lbvaluereader":
+                    this.LBValueReader += 1;
+                    break;
                 default:
-                    //connected to server, so reset fail couters
+                    //connected to server, so reset fail counters
                     this.Off = 0;
                     this.Unknown = 0;
                     this.Error = 0;
+                    this.LBValueReader = 0;
                     break;
             }
         }
@@ -54,6 +60,8 @@ namespace OSCam.Maintainer
             sb.Append(Off.ToString());
             sb.Append(";");
             sb.Append(Unknown.ToString());
+            sb.Append(";");
+            sb.Append(LBValueReader.ToString());
             sb.Append(";");
             sb.Append(Username.ToString());
 
