@@ -62,16 +62,17 @@ namespace OSCam.Maintainer
 
                 var dailyListOfCLines = task_A.Result;
                 var currentServerStatusList = task_B.Result;
-                var currentListOfCCCamReadersFromFile = task_C.Result;
+                var currentListOfCcCamReadersFromFile = task_C.Result;
 
-                currentListOfCCCamReadersFromFile = await RemoveReadersThatDontHaveTheCAID(currentListOfCCCamReadersFromFile, currentServerStatusList).ConfigureAwait(false);
+                currentListOfCcCamReadersFromFile = await RemoveReadersThatDontHaveTheCAID(currentListOfCcCamReadersFromFile, currentServerStatusList).ConfigureAwait(false);
+                
                 //await UpdateServersDescription(ref currentListOfCCCamReadersFromFile, currentServerStatusList);
 
                 //await DeleteStaleReaders(ref currentListOfCCCamReadersFromFile);
 
-                var currentListOfCCCamReadersFromFileNEW = AddNewScrapedReaders(currentListOfCCCamReadersFromFile, dailyListOfCLines);
+                var currentListOfCcCamReadersFromFileNew = AddNewScrapedReaders(currentListOfCcCamReadersFromFile, dailyListOfCLines);
 
-                WriteOsCamReadersToFile(currentListOfCCCamReadersFromFileNEW, maintainerOptions.OscamServerPath); // + DateTime.Now.ToShortTimeString().Replace(":","") + ".txt");
+                WriteOsCamReadersToFile(currentListOfCcCamReadersFromFileNew, maintainerOptions.OscamServerPath); // + DateTime.Now.ToShortTimeString().Replace(":","") + ".txt");
             }
             catch (Exception ex)
             {
@@ -212,7 +213,6 @@ namespace OSCam.Maintainer
             foreach (var osCAMReader in currentListOfCCCamReadersFromFile)
             {
                 ///Let's look for the CAID and if it's there we don't do anything
-
                 if (await HasTheReaderAccessToTheCAID(maintainerOptions.OsCamReaderAPIURL + @"?part=entitlement&label=" + osCAMReader.Label,
                                                       maintainerOptions.CAIDs)
                         .ConfigureAwait(false)
