@@ -2,8 +2,8 @@
 {
     public class Providers
     {     
-        public string caid { get; set; }
-        public string id { get; set; }
-        public string uphops { get; set; }
+        public string Caid { get; set; }
+        public string Id { get; set; }
+        public string Uphops { get; set; }
     }
 }

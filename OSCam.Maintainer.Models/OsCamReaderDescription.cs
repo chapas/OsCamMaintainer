@@ -8,7 +8,7 @@ namespace OSCam.Maintainer
         int Error { get; set; }
         int Off { get; set; }
         int Unknown { get; set; }
-        int LBValueReader { get; set; }
+        int LbValueReader { get; set; }
         public string Username { get; set; } = "";
 
         public OsCamReaderDescription(string description)
@@ -21,7 +21,7 @@ namespace OSCam.Maintainer
                 Error = int.Parse(statusArray[0]);
                 Off = int.Parse(statusArray[1]);
                 Unknown = int.Parse(statusArray[2]);
-                LBValueReader = int.Parse(statusArray[3]);
+                LbValueReader = int.Parse(statusArray[3]);
                 Username =  string.IsNullOrEmpty(statusArray[4]) ? "" : statusArray[4];
         }
 
@@ -39,14 +39,14 @@ namespace OSCam.Maintainer
                     this.Error += 1;
                     break;
                 case "lbvaluereader":
-                    this.LBValueReader += 1;
+                    this.LbValueReader += 1;
                     break;
                 default:
                     //connected to server, so reset fail counters
                     this.Off = 0;
                     this.Unknown = 0;
                     this.Error = 0;
-                    this.LBValueReader = 0;
+                    this.LbValueReader = 0;
                     break;
             }
         }
@@ -61,7 +61,7 @@ namespace OSCam.Maintainer
             sb.Append(";");
             sb.Append(Unknown.ToString());
             sb.Append(";");
-            sb.Append(LBValueReader.ToString());
+            sb.Append(LbValueReader.ToString());
             sb.Append(";");
             sb.Append(Username.ToString());
 

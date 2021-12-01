@@ -5,49 +5,49 @@ namespace OSCam.Maintainer.Models
 {
     public class OsCamReader //http://www.faalsoft.com/knowledgebase/448/oscamserver.html
     {
-        public const string reader = @"[reader]";
-        public string label { get; set; } = ""; // same as label
-        public string description { get; set; } // error;off;unknown;no data;username
-        public string enable { get; set; } = "1";
-        public string protocol { get; set; } = "cccam"; //cccam ou newcam
-        public string key { get; set; } = "";
-        public string device { get; set; } = ""; //IP ou URL
-        public string port { get; set; } = ""; //device port => "device,port"
-        public string user { get; set; } = "";
-        public string password { get; set; } = "";
-        public string group { get; set; } = "1";
-        public string inactivitytimeout { get; set; } = "30";
-        public string reconnecttimeout { get; set; } = "30";
-        public string lb_weight { get; set; } = "100";
-        public string cccversion { get; set; } = "2.1.2";
-        public string cccmaxhops { get; set; } = "10";
-        public string cccwantemu { get; set; } = "1";
-        public string ccckeepalive { get; set; } = "1";
+        public const string Reader = @"[reader]";
+        public string Label { get; set; } = ""; // same as label
+        public string Description { get; set; } // error;off;unknown;no data;username
+        public string Enable { get; set; } = "1";
+        public string Protocol { get; set; } = "cccam"; //cccam ou newcam
+        public string Key { get; set; } = "";
+        public string Device { get; set; } = ""; //IP ou URL
+        public string Port { get; set; } = ""; //device port => "device,port"
+        public string User { get; set; } = "";
+        public string Password { get; set; } = "";
+        public string Group { get; set; } = "1";
+        public string Inactivitytimeout { get; set; } = "30";
+        public string Reconnecttimeout { get; set; } = "30";
+        public string LbWeight { get; set; } = "100";
+        public string Cccversion { get; set; } = "2.1.2";
+        public string Cccmaxhops { get; set; } = "10";
+        public string Cccwantemu { get; set; } = "1";
+        public string Ccckeepalive { get; set; } = "1";
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine(reader);
-            sb.AppendLine("label                    = " + label);
-            if (!string.IsNullOrEmpty(description))
-                sb.AppendLine("description              = " + description);
-            sb.AppendLine("enable                   = " + enable);
-            sb.AppendLine("protocol                 = " + protocol);
-            if (!string.IsNullOrEmpty(key))
-                sb.AppendLine("key= " + key);
-            sb.AppendLine("device                   = " + device + "," + port);
-            sb.AppendLine("user                     = " + user);
-            sb.AppendLine("password                 = " + password);
-            sb.AppendLine("group                    = " + group);
-            sb.AppendLine("inactivitytimeout        = " + inactivitytimeout);
-            sb.AppendLine("reconnecttimeout         = " + reconnecttimeout);
-            sb.AppendLine("lb_weight                = " + lb_weight); 
-            sb.AppendLine("cccversion               = " + cccversion);
-            sb.AppendLine("cccmaxhops               = " + cccmaxhops);
-            if (!string.IsNullOrEmpty(cccwantemu))
-                sb.AppendLine("cccwantemu               = " + cccwantemu);
-            sb.AppendLine("ccckeepalive             = " + ccckeepalive);
+            sb.AppendLine(Reader);
+            sb.AppendLine("label                    = " + Label);
+            if (!string.IsNullOrEmpty(Description))
+                sb.AppendLine("description              = " + Description);
+            sb.AppendLine("enable                   = " + Enable);
+            sb.AppendLine("protocol                 = " + Protocol);
+            if (!string.IsNullOrEmpty(Key))
+                sb.AppendLine("key= " + Key);
+            sb.AppendLine("device                   = " + Device + "," + Port);
+            sb.AppendLine("user                     = " + User);
+            sb.AppendLine("password                 = " + Password);
+            sb.AppendLine("group                    = " + Group);
+            sb.AppendLine("inactivitytimeout        = " + Inactivitytimeout);
+            sb.AppendLine("reconnecttimeout         = " + Reconnecttimeout);
+            sb.AppendLine("lb_weight                = " + LbWeight); 
+            sb.AppendLine("cccversion               = " + Cccversion);
+            sb.AppendLine("cccmaxhops               = " + Cccmaxhops);
+            if (!string.IsNullOrEmpty(Cccwantemu))
+                sb.AppendLine("cccwantemu               = " + Cccwantemu);
+            sb.AppendLine("ccckeepalive             = " + Ccckeepalive);
             sb.AppendLine();
 
             return sb.ToString();
@@ -55,9 +55,9 @@ namespace OSCam.Maintainer.Models
 
         public void UpdateNewFoundStateOnDescription(string newFoundState)
         {
-            var readerDescriptionModel = new OsCamReaderDescription(description);
+            var readerDescriptionModel = new OsCamReaderDescription(Description);
             readerDescriptionModel.UpdateDescriptionWithNewData(newFoundState);
-            description = readerDescriptionModel.ToString();
+            Description = readerDescriptionModel.ToString();
         }
     }
 }

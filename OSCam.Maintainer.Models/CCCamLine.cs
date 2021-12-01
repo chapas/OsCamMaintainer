@@ -2,35 +2,35 @@
 
 namespace OSCam.Maintainer.Models
 {
-    public class CCCamLine
+    public class CcCamLine
     {
-        public const string cLineIndentifier = @"C:";
+        public const string CLineIndentifier = @"C:";
 
         /// <summary>
         /// Instructions where to look for a server
         /// </summary>
-        public string hostname { get; set; }
+        public string Hostname { get; set; }
 
         /// <summary>
         /// Which port that server is using
         /// </summary>
-        public string port { get; set; }
+        public string Port { get; set; }
 
         /// <summary>
         /// Username to connect to that server
         /// </summary>
-        public string username { get; set; }
+        public string Username { get; set; }
 
         /// <summary>
         /// Password to connect to that server
         /// </summary>
-        public string password { get; set; }
+        public string Password { get; set; }
 
         /// <summary>
         /// If you like to receive Emulator shares from keys
         /// (only if set to 1 if set to give emus on the f line from the server you are getting )
         /// </summary>
-        public string wantemus { get; set; } = "no"; //yes or no
+        public string Wantemus { get; set; } = "no"; //yes or no
 
         /// <summary>
         /// Limiting what to get from that particular server
@@ -40,7 +40,7 @@ namespace OSCam.Maintainer.Models
         /// <summary>
         /// Line comment
         /// </summary>
-        public string cccversion { get; set; } //ex: # v2.0.11-2892
+        public string Cccversion { get; set; } //ex: # v2.0.11-2892
     }
 }
 

@@ -12,15 +12,17 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace OSCam.Maintainer
 {
     partial class Program
     {
         static MaintainerOptions maintainerOptions;
-        
+
         static LoggerProviderCollection Providers = new LoggerProviderCollection();
 
         static IServiceProvider serviceProvider;
@@ -28,9 +30,9 @@ namespace OSCam.Maintainer
         static void Main(string[] args)
         {
             try
-            {     
+            {
                 serviceProvider = Initialize();
-                
+
                 Log.Information("Starting OSCam.Maintainer");
 
                 MainAsync().Wait();
@@ -47,7 +49,7 @@ namespace OSCam.Maintainer
 
         private static async Task MainAsync()
         {
-        
+
             maintainerOptions = serviceProvider.GetRequiredService<MaintainerOptions>();
 
             try
@@ -58,13 +60,14 @@ namespace OSCam.Maintainer
 
                 await Task.WhenAll(task_A, task_B, task_C);
 
-                var dailyListOfCLines = await task_A;
-                var currentServerStatusList = await task_B;
-                var currentListOfCCCamReadersFromFile = await task_C;
+                var dailyListOfCLines = task_A.Result;
+                var currentServerStatusList = task_B.Result;
+                var currentListOfCCCamReadersFromFile = task_C.Result;
 
-                await UpdateServersDescription(ref currentListOfCCCamReadersFromFile, currentServerStatusList);
+                currentListOfCCCamReadersFromFile = await RemoveReadersThatDontHaveTheCAID(currentListOfCCCamReadersFromFile, currentServerStatusList).ConfigureAwait(false);
+                //await UpdateServersDescription(ref currentListOfCCCamReadersFromFile, currentServerStatusList);
 
-                await DeleteStaleReaders(ref currentListOfCCCamReadersFromFile);
+                //await DeleteStaleReaders(ref currentListOfCCCamReadersFromFile);
 
                 var currentListOfCCCamReadersFromFileNEW = AddNewScrapedReaders(currentListOfCCCamReadersFromFile, dailyListOfCLines);
 
@@ -83,10 +86,10 @@ namespace OSCam.Maintainer
 
             foreach (var reader in currentListOfCCCamReadersFromFile)
             {
-                if (reader.description.IndexOf(maintainerOptions.NumberOfBackupsToKeep + ";") >= 0)
+                if (reader.Description.IndexOf(maintainerOptions.NumberOfBackupsToKeep + ";") >= 0)
                 {
                     readersToRemove.Add(reader);
-                    Log.Debug(reader.label + " is stale with: " + reader.description + " and is flagged to be deleted");
+                    Log.Debug(reader.Label + " is stale with: " + reader.Description + " and is flagged to be deleted");
                 }
             }
 
@@ -119,70 +122,70 @@ namespace OSCam.Maintainer
                         switch (arrayCCCAMLines[0].Trim().ToLower())
                         {
                             case "[reader]":
+                            {
+                                if (!string.IsNullOrEmpty(reader.Label))
                                 {
-                                    if (!string.IsNullOrEmpty(reader.label))
-                                    {
-                                        lista.Add(reader);
-                                        counter++;
-                                    }
-
-                                    reader = new OsCamReader();
-                                    continue;
+                                    lista.Add(reader);
+                                    counter++;
                                 }
+
+                                reader = new OsCamReader();
+                                continue;
+                            }
                             case "label":
-                                reader.label = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.label : arrayCCCAMLines[1].Trim();
+                                reader.Label = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Label : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "description":
-                                reader.description = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.description : arrayCCCAMLines[1].Trim();
+                                reader.Description = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Description : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "enable":
-                                reader.enable = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.enable : arrayCCCAMLines[1].Trim();
+                                reader.Enable = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Enable : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "protocol":
-                                reader.protocol = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.protocol : arrayCCCAMLines[1].Trim();
+                                reader.Protocol = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Protocol : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "device":
+                            {
+                                if (!string.IsNullOrEmpty(arrayCCCAMLines[1]))
                                 {
-                                    if (!string.IsNullOrEmpty(arrayCCCAMLines[1]))
-                                    {
-                                        var device = arrayCCCAMLines[1].Split(',');
-                                        reader.device = string.IsNullOrEmpty(device[0]) ? reader.device : device[0].Trim();
-                                        reader.port = string.IsNullOrEmpty(device[1]) ? reader.port : device[1].Trim();
-                                    }
-                                    continue;
+                                    var device = arrayCCCAMLines[1].Split(',');
+                                    reader.Device = string.IsNullOrEmpty(device[0]) ? reader.Device : device[0].Trim();
+                                    reader.Port = string.IsNullOrEmpty(device[1]) ? reader.Port : device[1].Trim();
                                 }
+                                continue;
+                            }
                             case "key":
-                                reader.key = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.key : arrayCCCAMLines[1].Trim();
+                                reader.Key = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Key : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "user":
-                                reader.user = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.user : arrayCCCAMLines[1].Trim();
+                                reader.User = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.User : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "password":
-                                reader.password = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.password : arrayCCCAMLines[1].Trim();
+                                reader.Password = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Password : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "inactivitytimeout":
-                                reader.inactivitytimeout = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.inactivitytimeout : arrayCCCAMLines[1].Trim();
+                                reader.Inactivitytimeout = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Inactivitytimeout : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "group":
-                                reader.group = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.group : arrayCCCAMLines[1].Trim();
+                                reader.Group = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Group : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "cccversion":
-                                reader.cccversion = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.cccversion : arrayCCCAMLines[1].Trim();
+                                reader.Cccversion = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Cccversion : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "ccckeepalive":
-                                reader.ccckeepalive = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.ccckeepalive : arrayCCCAMLines[1].Trim();
+                                reader.Ccckeepalive = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Ccckeepalive : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "reconnecttimeout":
-                                reader.reconnecttimeout = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.reconnecttimeout : arrayCCCAMLines[1].Trim();
+                                reader.Reconnecttimeout = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Reconnecttimeout : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "lb_weight":
-                                reader.lb_weight = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.lb_weight : arrayCCCAMLines[1].Trim();
+                                reader.LbWeight = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.LbWeight : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "cccmaxhops":
-                                reader.cccmaxhops = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.cccmaxhops : arrayCCCAMLines[1].Trim();
+                                reader.Cccmaxhops = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Cccmaxhops : arrayCCCAMLines[1].Trim();
                                 continue;
                             case "cccwantemu":
-                                reader.cccwantemu = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.cccwantemu : arrayCCCAMLines[1].Trim();
+                                reader.Cccwantemu = string.IsNullOrEmpty(arrayCCCAMLines[1]) ? reader.Cccwantemu : arrayCCCAMLines[1].Trim();
                                 continue;
                             default:
                                 Console.WriteLine("Skiped " + linha);
@@ -201,32 +204,55 @@ namespace OSCam.Maintainer
             return Task.FromResult(lista);
         }
 
-        private static Task UpdateServersDescription(ref List<OsCamReader> currentListOfCCCamReadersFromFile, List<OscamUIStatusLine> currentServerStatusList)
+        private static async Task<List<OsCamReader>> RemoveReadersThatDontHaveTheCAID(List<OsCamReader> currentListOfCCCamReadersFromFile, List<OscamUiStatusLine> currentServerStatusList)
+        {
+            var readersToRemove = new List<OsCamReader>();
+
+            //NEW VERSION, just deletes reader if CAID is not available
+            foreach (var osCAMReader in currentListOfCCCamReadersFromFile)
+            {
+                ///Let's look for the CAID and if it's there we don't do anything
+
+                if (await HasTheReaderAccessToTheCAID(maintainerOptions.OsCamReaderAPIURL + @"?part=entitlement&label=" + osCAMReader.Label,
+                                                      maintainerOptions.CAIDs)
+                        .ConfigureAwait(false)
+                    //HasTheReaderAccessToTheCAIDScrapper(maintainerOptions.OsCamReaderPageURL + @"?label=" + osCAMReader.Label, maintainerOptions.CAIDs))
+                    )
+                    continue;
+
+                readersToRemove.Add(osCAMReader);
+                Log.Debug(osCAMReader.Label + " does not have a valid CAID and is flagged to be deleted");
+            }
+
+            return currentListOfCCCamReadersFromFile.Except(readersToRemove).ToList();
+        }
+
+        private static Task UpdateServersDescription(ref List<OsCamReader> currentListOfCCCamReadersFromFile, List<OscamUiStatusLine> currentServerStatusList)
         {
             foreach (var osCAMReader in currentListOfCCCamReadersFromFile)
             {
-                var readerStatus = currentServerStatusList.Where(osCamSL => osCamSL.ReaderUser == osCAMReader.device 
-                                                                           & osCamSL.Port == osCAMReader.port
-                                                                           //& osCamSL.OsCamReaderDescription.Username == osCAMReader.user
+                var readerStatus = currentServerStatusList.Where(osCamSL => osCamSL.ReaderUser == osCAMReader.Device
+                                                                           & osCamSL.Port == osCAMReader.Port
+                                                                            //& osCamSL.OsCamReaderDescription.Username == osCAMReader.user
                                                                             )
                                                           .Select(sl => sl.Status).FirstOrDefault();
 
                 if (readerStatus?.ToLowerInvariant() == "off" || readerStatus?.ToLowerInvariant() == "unknown" || readerStatus?.ToLowerInvariant() == "error")
-                { 
+                {
                     osCAMReader.UpdateNewFoundStateOnDescription(readerStatus);
-                    Log.Debug(osCAMReader.label + " reader was found with the stale state: " + readerStatus + " . Let's update its description.");
+                    Log.Debug(osCAMReader.Label + " reader was found with the stale state: " + readerStatus + " . Let's update its description.");
                 }
 
-                var readerLBValueReader = currentServerStatusList.Where(osCamSL => osCamSL.ReaderUser == osCAMReader.device 
-                                                                           & osCamSL.Port == osCAMReader.port
-                                                                           //& osCamSL.OsCamReaderDescription.Username == osCAMReader.user
+                var readerLBValueReader = currentServerStatusList.Where(osCamSL => osCamSL.ReaderUser == osCAMReader.Device
+                                                                           & osCamSL.Port == osCAMReader.Port
+                                                                            //& osCamSL.OsCamReaderDescription.Username == osCAMReader.user
                                                                             )
-                                                          .Select(sl => sl.LBValueReader).FirstOrDefault();
+                                                          .Select(sl => sl.LbValueReader).FirstOrDefault();
 
                 if (readerLBValueReader == "no data")
                 {
                     osCAMReader.UpdateNewFoundStateOnDescription("LBValueReader");
-                    Log.Debug(osCAMReader.label + " reader was found with the stale state: LBValueReader has not data. Let's update its description.");
+                    Log.Debug(osCAMReader.Label + " reader was found with the stale state: LBValueReader has not data. Let's update its description.");
                 }
             }
 
@@ -242,9 +268,9 @@ namespace OSCam.Maintainer
                 var OnFile = false;
                 foreach (var currentlines in currentServerStatusList)
                 {
-                    if (line.device == currentlines.device &&
-                        line.port == currentlines.port &&
-                        line.user == currentlines.user)
+                    if (line.Device == currentlines.Device &&
+                        line.Port == currentlines.Port &&
+                        line.User == currentlines.User)
                     {
                         OnFile = true;
                         break;
@@ -264,40 +290,70 @@ namespace OSCam.Maintainer
 
         private static void WriteOsCamReadersToFile(List<OsCamReader> currentServerStatusList, string oscamServerFilepath = @"oscam.server")
         {
+            var readers = new List<OsCamReader>();
+
+            foreach (var reader in currentServerStatusList)
+            {
+                if (readers.FirstOrDefault(camReader => camReader.Label.Contains(reader.Label)) != null)
+                    reader.Label = reader.Label + Guid.NewGuid().ToString().Split('-')[0];
+
+                readers.Add(reader);
+            }
+
             using (StreamWriter sr = new StreamWriter(oscamServerFilepath, false, Encoding.ASCII))
             {
-                foreach (var reader in currentServerStatusList)
+                foreach (var reader in readers)
                     sr.Write(reader.ToString());
             }
 
             Log.Information("Wrote a total of " + currentServerStatusList.Count + " readers to oscam.server");
         }
 
-        private static async Task<List<OscamUIStatusLine>> GetListWithCurrentServerStatusFromOsCam(string osCamStatusPageURL)
+        private static async Task<List<OscamUiStatusLine>> GetListWithCurrentServerStatusFromOsCam(string osCamStatusPageURL)
         {
             var config = Configuration.Default.WithDefaultLoader();               // Create a new browsing context
             var context = BrowsingContext.New(config);                            // This is where the HTTP request happens, returns <IDocument> that // we can query later
             IDocument document = context.OpenAsync(osCamStatusPageURL).Result; // Log the data to the console
-                                                                                                    //var asdf = document.DocumentElement.OuterHtml;
-                                                                                                    // var docu = document.
+                                                                               //var asdf = document.DocumentElement.OuterHtml;
+                                                                               // var docu = document.
 
             var rows = document.QuerySelectorAll("table.status tbody#tbodyp tr");
 
-            var oscamUIStatusLine = new List<OscamUIStatusLine>();
+            var oscamUIStatusLine = new List<OscamUiStatusLine>();
 
             oscamUIStatusLine.AddRange(rows.Where(sl => sl != null)
-                           .Select(sl => new OscamUIStatusLine()
+                           .Select(sl => new OscamUiStatusLine()
                            {
                                Description = ((AngleSharp.Html.Dom.IHtmlTableDataCellElement)sl.QuerySelectorAll("td.statuscol4").FirstOrDefault())?.Title?.Substring(((AngleSharp.Html.Dom.IHtmlTableDataCellElement)sl.QuerySelectorAll("td.statuscol4").FirstOrDefault()).Title.LastIndexOf('\r') + 2)?.TrimEnd(')'),
                                ReaderUser = sl.QuerySelectorAll("td.statuscol4").Select(tg => tg.TextContent).FirstOrDefault()?.Trim(),
                                Port = sl.QuerySelectorAll("td.statuscol8").Select(tg => tg.TextContent).FirstOrDefault()?.Trim(),
-                               LBValueReader = sl.QuerySelectorAll("td.statuscol14").Select(tg => tg.TextContent).FirstOrDefault()?.Trim(),
+                               LbValueReader = sl.QuerySelectorAll("td.statuscol14").Select(tg => tg.TextContent).FirstOrDefault()?.Trim(),
                                Status = sl.QuerySelectorAll("td.statuscol16").Select(tg => tg.TextContent).FirstOrDefault()?.Trim()
                            }));
 
             oscamUIStatusLine.RemoveAll(line => line.ReaderUser == null || line.Port == null || line.Status == null);
 
             return oscamUIStatusLine;
+        }
+
+        private static bool HasTheReaderAccessToTheCAIDScrapper(string osCamReaderPageURL, string[] CAIDs)
+        {
+            var config = Configuration.Default.WithDefaultLoader();               // Create a new browsing context
+            var context = BrowsingContext.New(config);                            // This is where the HTTP request happens, returns <IDocument> that // we can query later
+            IDocument document = context.OpenAsync(osCamReaderPageURL).Result; // Log the data to the console
+                                                                               //var asdf = document.DocumentElement.OuterHtml;
+                                                                               // var docu = document.
+
+            foreach (string caid in CAIDs)
+            {
+                var result = document.QuerySelectorAll("table.stats")
+                                    .FirstOrDefault(m => m.TextContent.Contains($"{caid}@"));
+
+                if (result != null)
+                    return true;
+            }
+
+            return false;
         }
 
         private static async Task<List<OsCamReader>> GetListofNewCLinesFromWeb(string url)
@@ -308,9 +364,9 @@ namespace OSCam.Maintainer
             var config = Configuration.Default.WithDefaultLoader();               // Create a new browsing context
             var context = BrowsingContext.New(config);                            // This is where the HTTP request happens, returns <IDocument> that // we can query later
             var document = await context.OpenAsync(url + date_yyyy_MM_dd + "/"); // Log the data to the console
-                                                                                                                        //var asdf = document.DocumentElement.OuterHtml;
-                                                                                                                        // var docu = document.
-            // workaround to get the previous day
+                                                                                 //var asdf = document.DocumentElement.OuterHtml;
+                                                                                 // var docu = document.
+                                                                                 // workaround to get the previous day
             if (document.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 date_yyyy_MM_dd = DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -324,25 +380,25 @@ namespace OSCam.Maintainer
             if (lines.ToList().Count == 0)
                 return new List<OsCamReader>();
 
-            List<CCCamLine> cccamlines = new List<CCCamLine>();
+            List<CcCamLine> cccamlines = new List<CcCamLine>();
 
             foreach (var cline in lines.ToList()[0])
                 cccamlines.Add(ParseCLine(cline));
-            
+
 
             List<OsCamReader> readers = new List<OsCamReader>();
 
             readers.AddRange(cccamlines.Where(cl => cl != null)
                                        .Select(cl => new OsCamReader()
                                        {
-                                           device = cl.hostname,
-                                           port = cl.port,
-                                           user = cl.username,
-                                           password = cl.password,
-                                           label = cl.hostname,
-                                           cccversion = cl.cccversion,
-                                           cccwantemu = cl.wantemus,
-                                           description = "0;0;0;0;" + cl.username
+                                           Device = cl.Hostname,
+                                           Port = cl.Port,
+                                           User = cl.Username,
+                                           Password = cl.Password,
+                                           Label = cl.Hostname,
+                                           Cccversion = cl.Cccversion,
+                                           Cccwantemu = cl.Wantemus,
+                                           Description = "0;0;0;0;" + cl.Username
                                        }));
 
             Log.Information("Retrieved " + readers.Count + " C lines from " + url);
@@ -350,29 +406,29 @@ namespace OSCam.Maintainer
             return readers;
         }
 
-        private static CCCamLine ParseCLine(string cline)
+        private static CcCamLine ParseCLine(string cline)
         {
             if (!cline.ToString().StartsWith(@"C:"))
                 return null;
 
-            CCCamLine line = new CCCamLine();
+            CcCamLine line = new CcCamLine();
 
             if (cline.LastIndexOf('#') != -1)
             {
                 int lastIndexOfCardinal = cline.LastIndexOf('#');
 
                 var c = cline.Substring(lastIndexOfCardinal + 1, cline.Length - lastIndexOfCardinal - 1).Trim().Replace("v", "");
-                line.cccversion = c.Remove(c.IndexOf("-"), c.Length - c.IndexOf("-"));
+                line.Cccversion = c.Remove(c.IndexOf("-"), c.Length - c.IndexOf("-"));
 
                 cline = cline.Substring(0, cline.IndexOf("#") - 1).Trim();
             }
 
             var s = cline.Replace("C:", "").Replace("c:", "").Trim().Split(" ");
 
-            line.hostname = s[0];
-            line.port = s[1];
-            line.username = s[2];
-            line.password = s[3];
+            line.Hostname = s[0];
+            line.Port = s[1];
+            line.Username = s[2];
+            line.Password = s[3];
 
             //try
             //{
@@ -417,6 +473,108 @@ namespace OSCam.Maintainer
                 Log.Error("Error while initializing OSCam.Maintainer", ex);
                 throw;
             }
+        }
+
+        private static async void Adsfsd()
+        {
+            var httpClient = new HttpClient();
+            //var someXmlString = "<SomeDto><SomeTag>somevalue</SomeTag></SomeDto>";
+            //var stringContent = new StringContent(someXmlString, Encoding.UTF8, "application/xml");
+            var response = await httpClient.GetAsync("http://192.168.1.244:8888/oscamapi.html?part=entitlement&label=ru256.cserver.tv");
+
+            response.EnsureSuccessStatusCode();
+
+            if (response.IsSuccessStatusCode)
+            {
+                XmlSerializer serializer = new XmlSerializer(typeof(oscam));
+                using (StringReader reader = new StringReader(await response.Content.ReadAsStringAsync()))
+                {
+                    var test = (oscam)serializer.Deserialize(reader);
+
+                    var totalCardCount = test.reader.Select(oscamReader => oscamReader)
+                                        .FirstOrDefault()
+                                        ?.cardlist.FirstOrDefault()
+                                        ?.totalcards;
+                    if (totalCardCount == null ||
+                        int.Parse(totalCardCount) == 0)
+                    {
+
+                    }
+
+
+
+                }
+
+            }
+
+        }
+
+        private static async Task<bool> HasTheReaderAccessToTheCAID(string osCamReaderPageURL, string[] CAIDs)
+        {
+            try
+            {
+
+                XmlSerializer serializer = new XmlSerializer(typeof(oscam));
+                using (var httpClient = new HttpClient())
+                {
+                    httpClient.BaseAddress = new Uri(osCamReaderPageURL);
+                    httpClient.DefaultRequestHeaders.Accept.Clear();
+
+                    //var someXmlString = "<SomeDto><SomeTag>somevalue</SomeTag></SomeDto>";
+                    //var stringContent = new StringContent(someXmlString, Encoding.UTF8, "application/xml");
+                    var response = await httpClient.GetAsync(osCamReaderPageURL).ConfigureAwait(false);
+
+                    response.EnsureSuccessStatusCode();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+
+                        using (StringReader reader =
+                            new StringReader(await response.Content.ReadAsStringAsync().ConfigureAwait(false)))
+                        {
+                            var test = (oscam)serializer.Deserialize(reader);
+
+
+                            var totalCardCount = test.reader?.Select(oscamReader => oscamReader)
+                                                     .FirstOrDefault()
+                                                     ?.cardlist.FirstOrDefault()
+                                                     ?.totalcards;
+
+                            if (totalCardCount == null ||
+                                int.Parse(totalCardCount) == 0)
+                            {
+                                return false;
+                            }
+
+                            foreach (string caid in CAIDs)
+                            {
+
+                                var hasCaid = (test.reader.Select(oscamReader => oscamReader)
+                                                   .FirstOrDefault()
+                                                   ?.cardlist.FirstOrDefault().card)
+                                    .FirstOrDefault(card => card.caid.Contains(caid));
+
+                                if (hasCaid != null)
+                                    return true;
+                            }
+
+                            return false;
+
+
+                        }
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return false;
+            }
+
+            return false;
+
+
         }
     }
 }

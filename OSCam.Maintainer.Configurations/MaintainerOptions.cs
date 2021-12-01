@@ -36,5 +36,29 @@
         /// The URL with status page from OsCam
         /// </value>
         public string OsCamStatusPageURL { get; set; }
+
+        /// <summary>
+        /// Gets or sets OsCam reader endpoint
+        /// </summary>
+        /// <value>
+        /// The URL with reader entitlements (avaliable shares)
+        /// </value>
+        public string OsCamReaderPageURL { get; set; }
+
+        /// <summary>
+        /// Gets or sets OsCam reader endpoint
+        /// </summary>
+        /// <value>
+        /// The URL with reader entitlements (avaliable shares)
+        /// </value>
+        public string OsCamReaderAPIURL { get; set; }
+
+        /// <summary>
+        /// Gets or sets allowed CAID's
+        /// </summary>
+        /// <value>
+        /// A list of CAID's that we find on the readers
+        /// </value>
+        public string[] CAIDs { get; set; }
     }
 }
