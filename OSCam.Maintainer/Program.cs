@@ -16,7 +16,11 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
-
+/*
+ {
+  "OsCam": {
+    "OscamServerPath": "/storage/.kodi/userdata/addon_data/service.softcam.oscam/config/oscam.server",
+ */
 namespace OSCam.Maintainer
 {
     partial class Program
@@ -65,7 +69,7 @@ namespace OSCam.Maintainer
                 var currentListOfCcCamReadersFromFile = task_C.Result;
 
                 currentListOfCcCamReadersFromFile = await RemoveReadersThatDontHaveTheCAID(currentListOfCcCamReadersFromFile, currentServerStatusList).ConfigureAwait(false);
-                
+
                 //await UpdateServersDescription(ref currentListOfCCCamReadersFromFile, currentServerStatusList);
 
                 //await DeleteStaleReaders(ref currentListOfCCCamReadersFromFile);
@@ -213,7 +217,7 @@ namespace OSCam.Maintainer
             foreach (var osCAMReader in currentListOfCCCamReadersFromFile)
             {
                 ///Let's look for the CAID and if it's there we don't do anything
-                if (await HasTheReaderAccessToTheCAID(maintainerOptions.OsCamReaderAPIURL + @"?part=entitlement&label=" + osCAMReader.Label,
+                if (await HasTheReaderAccessToTheCaid(maintainerOptions.OsCamReaderAPIURL + @"?part=entitlement&label=" + osCAMReader.Label,
                                                       maintainerOptions.CAIDs)
                         .ConfigureAwait(false)
                     //HasTheReaderAccessToTheCAIDScrapper(maintainerOptions.OsCamReaderPageURL + @"?label=" + osCAMReader.Label, maintainerOptions.CAIDs))
@@ -474,42 +478,8 @@ namespace OSCam.Maintainer
                 throw;
             }
         }
-
-        private static async void Adsfsd()
-        {
-            var httpClient = new HttpClient();
-            //var someXmlString = "<SomeDto><SomeTag>somevalue</SomeTag></SomeDto>";
-            //var stringContent = new StringContent(someXmlString, Encoding.UTF8, "application/xml");
-            var response = await httpClient.GetAsync("http://192.168.1.244:8888/oscamapi.html?part=entitlement&label=ru256.cserver.tv");
-
-            response.EnsureSuccessStatusCode();
-
-            if (response.IsSuccessStatusCode)
-            {
-                XmlSerializer serializer = new XmlSerializer(typeof(oscam));
-                using (StringReader reader = new StringReader(await response.Content.ReadAsStringAsync()))
-                {
-                    var test = (oscam)serializer.Deserialize(reader);
-
-                    var totalCardCount = test.reader.Select(oscamReader => oscamReader)
-                                        .FirstOrDefault()
-                                        ?.cardlist.FirstOrDefault()
-                                        ?.totalcards;
-                    if (totalCardCount == null ||
-                        int.Parse(totalCardCount) == 0)
-                    {
-
-                    }
-
-
-
-                }
-
-            }
-
-        }
-
-        private static async Task<bool> HasTheReaderAccessToTheCAID(string osCamReaderPageURL, string[] CAIDs)
+        
+        private static async Task<bool> HasTheReaderAccessToTheCaid(string osCamReaderPageUrl, string[] caiDs)
         {
             try
             {
@@ -517,12 +487,10 @@ namespace OSCam.Maintainer
                 XmlSerializer serializer = new XmlSerializer(typeof(oscam));
                 using (var httpClient = new HttpClient())
                 {
-                    httpClient.BaseAddress = new Uri(osCamReaderPageURL);
+                    httpClient.BaseAddress = new Uri(osCamReaderPageUrl);
                     httpClient.DefaultRequestHeaders.Accept.Clear();
 
-                    //var someXmlString = "<SomeDto><SomeTag>somevalue</SomeTag></SomeDto>";
-                    //var stringContent = new StringContent(someXmlString, Encoding.UTF8, "application/xml");
-                    var response = await httpClient.GetAsync(osCamReaderPageURL).ConfigureAwait(false);
+                    var response = await httpClient.GetAsync(osCamReaderPageUrl).ConfigureAwait(false);
 
                     response.EnsureSuccessStatusCode();
 
@@ -540,29 +508,26 @@ namespace OSCam.Maintainer
                                                      ?.cardlist.FirstOrDefault()
                                                      ?.totalcards;
 
-                            if (totalCardCount == null ||
-                                int.Parse(totalCardCount) == 0)
-                            {
+                            if (totalCardCount == null || int.Parse(totalCardCount) == 0)
                                 return false;
-                            }
+                            
+                            if (caiDs.Any())
+                                foreach (string caid in caiDs)
+                                {
 
-                            foreach (string caid in CAIDs)
-                            {
+                                    var hasCaid = (test.reader.Select(oscamReader => oscamReader)
+                                                       .FirstOrDefault()
+                                                       ?.cardlist.FirstOrDefault().card)
+                                        .FirstOrDefault(card => card.caid.Contains(caid));
 
-                                var hasCaid = (test.reader.Select(oscamReader => oscamReader)
-                                                   .FirstOrDefault()
-                                                   ?.cardlist.FirstOrDefault().card)
-                                    .FirstOrDefault(card => card.caid.Contains(caid));
-
-                                if (hasCaid != null)
-                                    return true;
-                            }
+                                    if (hasCaid != null)
+                                        return true;
+                                }
+                            else
+                                return true;
 
                             return false;
-
-
                         }
-
                     }
                 }
             }
@@ -573,8 +538,6 @@ namespace OSCam.Maintainer
             }
 
             return false;
-
-
         }
     }
 }
